@@ -11,7 +11,11 @@ source "$BEDROCK_DIR/lib/common.sh"
 [ -n "${SMTP_PASS:-}" ] || warn "SMTP_PASS missing in /opt/secrets/bedrock/secret.env - auth will fail until set."
 
 export DEBIAN_FRONTEND=noninteractive
-have msmtp || { apt-get update -qq; apt_install msmtp msmtp-mta mailutils ca-certificates; }
+# Install each piece if missing (msmtp may already be present without the mta or
+# the mail command, which is exactly the case on a migrated box).
+have msmtp                     || { apt-get update -qq; apt_install msmtp ca-certificates; }
+command -v sendmail >/dev/null || apt_install msmtp-mta
+command -v mail >/dev/null     || apt_install mailutils
 
 # 587 = STARTTLS, 465 = implicit TLS (SMTPS).
 port="${SMTP_PORT:-587}"
@@ -28,6 +32,9 @@ backup_once /etc/aliases
   echo "tls            on"
   echo "tls_starttls   ${starttls}"
   echo "tls_trust_file /etc/ssl/certs/ca-certificates.crt"
+  # Always send with the relay's own address below, ignoring root@host that
+  # mail/cron/fail2ban pass. Keeps SPF valid so mail lands in the inbox.
+  echo "allow_from_override off"
   echo "logfile        /var/log/msmtp.log"
   echo "aliases        /etc/aliases"
   echo
