@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Send a Pushover notification.  Usage: bedrock-notify <title> <message> [priority]
+set -u
+# Secrets live under /opt like the Docker stacks (/opt/secrets/<app>/.env).
+[ -f /opt/secrets/bedrock/secret.env ] && . /opt/secrets/bedrock/secret.env
+: "${PUSHOVER_TOKEN:=}"; : "${PUSHOVER_USER:=}"
+[ -n "$PUSHOVER_TOKEN" ] && [ -n "$PUSHOVER_USER" ] || { echo "bedrock-notify: PUSHOVER_TOKEN/USER not set" >&2; exit 1; }
+curl -s --max-time 8 \
+  --form-string "token=${PUSHOVER_TOKEN}" \
+  --form-string "user=${PUSHOVER_USER}" \
+  --form-string "title=${1:-notify}" \
+  --form-string "message=${2:-}" \
+  --form-string "priority=${3:-0}" \
+  https://api.pushover.net/1/messages.json >/dev/null 2>&1 || true

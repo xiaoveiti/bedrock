@@ -1,0 +1,6 @@
+# Per-server config and secrets - never commit these.
+config.sh
+secret.env
+*.bak
+*.bedrock.bak.*
+.DS_Store
