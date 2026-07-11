@@ -12,21 +12,23 @@ source "$BEDROCK_DIR/lib/common.sh"
 install -D -m755 "$BEDROCK_DIR/files/bin/bedrock-notify"          /usr/local/sbin/bedrock-notify
 install -D -m755 "$BEDROCK_DIR/files/login-notify/login-notify.sh" /usr/local/sbin/bedrock-login-notify
 
-write_if_changed /etc/systemd/system/bedrock-login-notify.service <<'EOF' || true
-[Unit]
-Description=bedrock: Pushover notification on SSH login
-After=network-online.target systemd-journald.service
-Wants=network-online.target
-
-[Service]
-ExecStart=/usr/local/sbin/bedrock-login-notify
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-EOF
+{
+  echo "[Unit]"
+  echo "Description=bedrock: Pushover notification on SSH login"
+  echo "After=network-online.target systemd-journald.service"
+  echo "Wants=network-online.target"
+  echo
+  echo "[Service]"
+  echo "ExecStart=/usr/local/sbin/bedrock-login-notify"
+  echo "Environment=\"LOGIN_NOTIFY_IGNORE_USERS=${LOGIN_NOTIFY_IGNORE_USERS:-}\""
+  echo "Restart=always"
+  echo "RestartSec=5"
+  echo
+  echo "[Install]"
+  echo "WantedBy=multi-user.target"
+} | write_if_changed /etc/systemd/system/bedrock-login-notify.service || true
 
 systemctl daemon-reload
-systemctl enable --now bedrock-login-notify.service >/dev/null 2>&1 || systemctl restart bedrock-login-notify.service
-log "login-notify active (systemd: bedrock-login-notify)"
+systemctl enable bedrock-login-notify.service >/dev/null 2>&1 || true
+systemctl restart bedrock-login-notify.service
+log "login-notify active (ignoring users: ${LOGIN_NOTIFY_IGNORE_USERS:-none})"

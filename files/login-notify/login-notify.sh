@@ -4,12 +4,14 @@
 # log comes from sshd or sshd-session.
 set -uo pipefail
 HOST="$(hostnamectl --static 2>/dev/null || hostname)"; HOST="${HOST%%.*}"
+IGNORE=" ${LOGIN_NOTIFY_IGNORE_USERS:-} "   # space-padded list of users to skip (e.g. CI deploy)
 
 journalctl -f -n0 -o cat --grep 'Accepted .* for ' 2>/dev/null | while IFS= read -r line; do
   case "$line" in
     Accepted*)
       method="$(awk '{print $2}' <<<"$line")"
       user="$(awk '{for(i=1;i<=NF;i++) if($i=="for"){print $(i+1); exit}}' <<<"$line")"
+      case "$IGNORE" in *" $user "*) continue ;; esac   # skip CI/automated logins (no spam)
       ip="$(awk '{for(i=1;i<=NF;i++) if($i=="from"){print $(i+1); exit}}' <<<"$line")"
       /usr/local/sbin/bedrock-notify \
         "SSH login · ${HOST}" \

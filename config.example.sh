@@ -43,6 +43,7 @@ FAIL2BAN_RECIDIVE_MAXRETRY="3"
 
 # -- 30-login-notify ----------------------------------------------------------
 LOGIN_NOTIFY_ENABLE="1"         # Pushover push on every successful SSH login
+LOGIN_NOTIFY_IGNORE_USERS="deploy"   # skip these users (space-separated), e.g. the CI deploy user -> no push spam
 
 # -- 40-docker ----------------------------------------------------------------
 DOCKER_USER=""                  # optional: user to add to the docker group
